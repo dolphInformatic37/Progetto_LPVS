@@ -1,0 +1,137 @@
+-- Modulo main
+MODULE main
+VAR
+  r:  r(t1,t2,t3,tag_behavior);   
+  t1: tag(r,tag_behavior);        
+  t2: tag(r,tag_behavior);        
+  t3: tag(r,tag_behavior);        
+  tag_behavior: tag_behavior(t1,t2,t3,r);  
+
+CTLSPEC EF (t1.tag_state = responding | t2.tag_state = responding | t3.tag_state = responding) 
+
+CTLSPEC EF (t1.tag_state = responding -> (t2.tag_state = waiting_probe | t2.tag_state = randomising_bit) &
+                                          (t3.tag_state = waiting_probe | t3.tag_state = randomising_bit)) 
+
+CTLSPEC EF (t2.tag_state = responding -> (t1.tag_state = waiting_probe | t1.tag_state = randomising_bit) &
+                                          (t3.tag_state = waiting_probe | t3.tag_state = randomising_bit)) 
+
+CTLSPEC EF (t3.tag_state = responding -> (t1.tag_state = waiting_probe | t1.tag_state = randomising_bit) &
+                                          (t2.tag_state = waiting_probe | t2.tag_state = randomising_bit)) 
+
+CTLSPEC AG (r.reader_state = accepting -> EF (t1.tag_state = waiting_probe)) 
+
+CTLSPEC EF (r.reader_state = sending -> (t1.tag_state = responding & t2.tag_state = responding & t3.tag_state = responding)) 
+
+CTLSPEC EF (r.reader_state = sending & (t1.tag_state = responding | t2.tag_state = responding | t3.tag_state = responding)) 
+
+CTLSPEC AG (r.reader_state = sending -> AG !(t1.tag_state = responding | t2.tag_state = responding | t3.tag_state = responding)) 
+
+CTLSPEC AG (t1.tag_state = waiting_probe & t2.tag_state = waiting_probe & t3.tag_state = waiting_probe -> AF (r.reader_state = idle)) 
+
+CTLSPEC AG AF (r.reader_state = idle | r.reader_state = sending) 
+
+CTLSPEC AG !AF (r.reader_state = idle | r.reader_state = sending) 
+
+CTLSPEC AG ((r.reader_state = accepting & t1.tag_state = responding) -> EF (r.reader_state = idle)) 
+
+MODULE tag(r,tag_behavior)
+VAR
+  tag_state: {waiting_probe, responding, randomising_bit, transmitted};  
+  random_bit: {0, 1};  
+
+ASSIGN
+  init(random_bit) := {0,1};          
+  next(random_bit) :=
+  case
+    tag_state = randomising_bit : {0,1};
+    TRUE : random_bit;
+  esac;
+
+MODULE r(t1,t2,t3,tag_behavior)
+VAR
+  reader_state: {idle, sending, collision, accepting};  
+
+ASSIGN
+  init(reader_state) := idle;  
+  next(reader_state) :=
+  case
+    reader_state = idle : {idle, sending};
+    reader_state = sending & 
+                    ((t1.tag_state = responding & t2.tag_state = responding) |
+                    (t1.tag_state = responding & t3.tag_state = responding) |
+                    (t2.tag_state = responding & t3.tag_state = responding)) : collision;
+    reader_state = collision : sending;
+    reader_state = accepting : idle;
+    reader_state = sending & (tag_behavior.t1_priority = obtained | 
+                              tag_behavior.t2_priority = obtained | 
+                              tag_behavior.t3_priority = obtained) : accepting;
+    TRUE : reader_state;
+  esac;
+
+MODULE tag_behavior(t1, t2, t3, reader)
+VAR
+  t1_priority: {p_collision, obtained};  
+  t2_priority: {p_collision, obtained};  
+  t3_priority: {p_collision, obtained};  
+
+ASSIGN
+
+  init(t1.tag_state) := waiting_probe;  
+  next(t1.tag_state) :=
+  case
+    t1.tag_state = waiting_probe & reader.reader_state = sending : responding;
+    t1.tag_state = responding & reader.reader_state = collision : randomising_bit;
+    t1.tag_state = responding & reader.reader_state = sending & t1_priority = obtained : transmitted;
+    t1.tag_state = randomising_bit : waiting_probe;
+    t1.tag_state = transmitted : transmitted;
+    TRUE : t1.tag_state;
+  esac;
+
+  init(t2.tag_state) := waiting_probe;  
+  next(t2.tag_state) :=
+  case
+    t2.tag_state = waiting_probe & reader.reader_state = sending : responding;
+    t2.tag_state = responding & reader.reader_state = collision : randomising_bit;
+    t2.tag_state = responding & reader.reader_state = sending & t2_priority = obtained : transmitted;
+    t2.tag_state = randomising_bit : waiting_probe;
+    t2.tag_state = transmitted : transmitted;
+    TRUE : t2.tag_state;
+  esac;
+
+  init(t3.tag_state) := waiting_probe;  
+  next(t3.tag_state) :=
+  case
+    t3.tag_state = waiting_probe & reader.reader_state = sending : responding;
+    t3.tag_state = responding & reader.reader_state = collision : randomising_bit;
+    t3.tag_state = responding & reader.reader_state = sending & t3_priority = obtained : transmitted;
+    t3.tag_state = randomising_bit : waiting_probe;
+    t3.tag_state = transmitted : transmitted;
+    TRUE : t3.tag_state;
+  esac;
+
+  next(t1_priority) :=
+    case
+      t1.tag_state = transmitted : obtained;
+      t1.random_bit = 0 & (t2.random_bit = 1 | (t2.tag_state = transmitted)) & 
+                          (t3.random_bit = 1 | (t3.tag_state = transmitted)) & 
+                          reader.reader_state = sending: obtained;
+      TRUE : p_collision;
+    esac;
+
+  next(t2_priority) :=
+    case
+      t2.tag_state = transmitted : obtained;
+      t2.random_bit = 0 & (t1.random_bit = 1 | (t1.tag_state = transmitted)) & 
+                          (t3.random_bit = 1 | (t3.tag_state = transmitted)) & 
+                          reader.reader_state = sending: obtained;
+      TRUE : p_collision;
+    esac;
+
+  next(t3_priority) :=
+    case
+      t3.tag_state = transmitted : obtained;
+      t3.random_bit = 0 & (t1.random_bit = 1 | (t1.tag_state = transmitted)) & 
+                          (t2.random_bit = 1 | (t2.tag_state = transmitted)) & 
+                          reader.reader_state = sending: obtained;
+      TRUE : p_collision;
+    esac;
