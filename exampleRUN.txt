@@ -1,0 +1,145 @@
+nusmv .\Collision_RFID.smv
+*** This is NuSMV 2.6.0 (compiled on Wed Oct 14 15:37:51 2015)
+*** Enabled addons are: compass
+*** For more information on NuSMV see <http://nusmv.fbk.eu>
+*** or email to <nusmv-users@list.fbk.eu>.
+*** Please report bugs to <Please report bugs to <nusmv-users@fbk.eu>>
+
+*** Copyright (c) 2010-2014, Fondazione Bruno Kessler
+
+*** This version of NuSMV is linked to the CUDD library version 2.4.1
+*** Copyright (c) 1995-2004, Regents of the University of Colorado
+
+*** This version of NuSMV is linked to the MiniSat SAT solver.
+*** See http://minisat.se/MiniSat.html
+*** Copyright (c) 2003-2006, Niklas Een, Niklas Sorensson
+*** Copyright (c) 2007-2010, Niklas Sorensson
+
+-- specification EF ((t1.tag_state = responding | t2.tag_state = responding) | t3.tag_state = responding)  is true
+-- specification EF (t1.tag_state = responding -> ((t2.tag_state = waiting_probe | t2.tag_state = randomising_bit) & (t3.tag_state = waiting_probe | t3.tag_state = randomising_bit)))  is true
+-- specification EF (t2.tag_state = responding -> ((t1.tag_state = waiting_probe | t1.tag_state = randomising_bit) & (t3.tag_state = waiting_probe | t3.tag_state = randomising_bit)))  is true
+-- specification EF (t3.tag_state = responding -> ((t1.tag_state = waiting_probe | t1.tag_state = randomising_bit) & (t2.tag_state = waiting_probe | t2.tag_state = randomising_bit)))  is true
+-- specification AG (r.reader_state = accepting -> EF t1.tag_state = waiting_probe)  is false
+-- as demonstrated by the following execution sequence
+Trace Description: CTL Counterexample
+Trace Type: Counterexample
+  -> State: 1.1 <-
+    r.reader_state = idle
+    t1.tag_state = waiting_probe
+    t1.random_bit = 1
+    t2.tag_state = waiting_probe
+    t2.random_bit = 1
+    t3.tag_state = waiting_probe
+    t3.random_bit = 1
+    tag_behavior.t1_priority = p_collision
+    tag_behavior.t2_priority = p_collision
+    tag_behavior.t3_priority = p_collision
+  -> State: 1.2 <-
+    r.reader_state = sending
+  -> State: 1.3 <-
+    t1.tag_state = responding
+    t2.tag_state = responding
+    t3.tag_state = responding
+  -> State: 1.4 <-
+    r.reader_state = collision
+  -> State: 1.5 <-
+    r.reader_state = sending
+    t1.tag_state = randomising_bit
+    t2.tag_state = randomising_bit
+    t3.tag_state = randomising_bit
+  -> State: 1.6 <-
+    t1.tag_state = waiting_probe
+    t1.random_bit = 0
+    t2.tag_state = waiting_probe
+    t3.tag_state = waiting_probe
+  -> State: 1.7 <-
+    t1.tag_state = responding
+    t2.tag_state = responding
+    t3.tag_state = responding
+    tag_behavior.t1_priority = obtained
+  -> State: 1.8 <-
+    r.reader_state = collision
+    t1.tag_state = transmitted
+  -> State: 1.9 <-
+    r.reader_state = sending
+    t2.tag_state = randomising_bit
+    t3.tag_state = randomising_bit
+  -> State: 1.10 <-
+    r.reader_state = accepting
+    t2.tag_state = waiting_probe
+    t2.random_bit = 0
+    t3.tag_state = waiting_probe
+    t3.random_bit = 0
+-- specification EF (r.reader_state = sending -> ((t1.tag_state = responding & t2.tag_state = responding) & t3.tag_state = responding))  is true
+-- specification EF (r.reader_state = sending & ((t1.tag_state = responding | t2.tag_state = responding) | t3.tag_state = responding))  is true
+-- specification AG (r.reader_state = sending -> AG !((t1.tag_state = responding | t2.tag_state = responding) | t3.tag_state = responding))  is false
+-- as demonstrated by the following execution sequence
+Trace Description: CTL Counterexample
+Trace Type: Counterexample
+  -> State: 2.1 <-
+    r.reader_state = idle
+    t1.tag_state = waiting_probe
+    t1.random_bit = 0
+    t2.tag_state = waiting_probe
+    t2.random_bit = 0
+    t3.tag_state = waiting_probe
+    t3.random_bit = 0
+    tag_behavior.t1_priority = p_collision
+    tag_behavior.t2_priority = p_collision
+    tag_behavior.t3_priority = p_collision
+  -> State: 2.2 <-
+    r.reader_state = sending
+  -> State: 2.3 <-
+    t1.tag_state = responding
+    t2.tag_state = responding
+    t3.tag_state = responding
+-- specification AG (((t1.tag_state = waiting_probe & t2.tag_state = waiting_probe) & t3.tag_state = waiting_probe) -> AF r.reader_state = idle)  is false
+-- as demonstrated by the following execution sequence
+Trace Description: CTL Counterexample
+Trace Type: Counterexample
+  -> State: 3.1 <-
+    r.reader_state = idle
+    t1.tag_state = waiting_probe
+    t1.random_bit = 1
+    t2.tag_state = waiting_probe
+    t2.random_bit = 1
+    t3.tag_state = waiting_probe
+    t3.random_bit = 1
+    tag_behavior.t1_priority = p_collision
+    tag_behavior.t2_priority = p_collision
+    tag_behavior.t3_priority = p_collision
+  -- Loop starts here
+  -> State: 3.2 <-
+    r.reader_state = sending
+  -> State: 3.3 <-
+    t1.tag_state = responding
+    t2.tag_state = responding
+    t3.tag_state = responding
+  -> State: 3.4 <-
+    r.reader_state = collision
+  -> State: 3.5 <-
+    r.reader_state = sending
+    t1.tag_state = randomising_bit
+    t2.tag_state = randomising_bit
+    t3.tag_state = randomising_bit
+  -> State: 3.6 <-
+    t1.tag_state = waiting_probe
+    t2.tag_state = waiting_probe
+    t3.tag_state = waiting_probe
+-- specification AG (AF (r.reader_state = idle | r.reader_state = sending))  is true
+-- specification AG !(AF (r.reader_state = idle | r.reader_state = sending))  is false
+-- as demonstrated by the following execution sequence
+Trace Description: CTL Counterexample
+Trace Type: Counterexample
+  -> State: 4.1 <-
+    r.reader_state = idle
+    t1.tag_state = waiting_probe
+    t1.random_bit = 0
+    t2.tag_state = waiting_probe
+    t2.random_bit = 0
+    t3.tag_state = waiting_probe
+    t3.random_bit = 0
+    tag_behavior.t1_priority = p_collision
+    tag_behavior.t2_priority = p_collision
+    tag_behavior.t3_priority = p_collision
+-- specification AG ((r.reader_state = accepting & t1.tag_state = responding) -> EF r.reader_state = idle)  is true
