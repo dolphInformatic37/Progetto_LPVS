@@ -18,18 +18,6 @@ Per eseguire la simulazione, segui questi passaggi:
 
 ## Proprietà Verificate
 
-- Raggiungibilità di almeno uno dei tag nello stato di risposta.
-- Raggiungibilità estesa di almeno un tag in risposta, data la risposta di un altro.
-- Raggiungibilità condizionata del tag dopo che il lettore raggiunge lo stato di accettazione.
-- Etc.
-
-## Licenza
-
-Questo progetto è rilasciato sotto la [licenza MIT](LICENSE).
-
-
-## Proprietà Verificate
-
 Di seguito sono elencate le proprietà verificate nel modello, insieme al relativo codice NuSMV:
 
 1. **Raggiungibilità:**
