@@ -12,7 +12,7 @@ Per eseguire la simulazione, segui questi passaggi:
 1. Assicurati di essere nella directory del progetto.
 2. Apri un terminale e digita il comando seguente:
     ```
-    NuSMV Collision_RFID.smv
+    nusmv .\Collision_RFID.smv
     ```
 3. Attendi il completamento dell'esecuzione. Una volta terminata, verranno visualizzati i risultati della simulazione.
 
